@@ -52,3 +52,29 @@ def search_faiss(query_text, k=3):
 # Test the search function
 test_query = "How does AI impact the world?"
 search_faiss(test_query)
+
+# Function to generate GPT response using retrieved context
+def generate_gpt_response(query_text):
+    # Retrieve most similar documents from FAISS
+    query_embedding = get_embedding(query_text)
+    distances, indices = index.search(np.array([query_embedding]), 3)
+
+    # Extract relevant context from documents
+    retrieved_docs = [documents[idx] for idx in indices[0]]
+
+    # Construct the prompt for GPT
+    prompt = f"Answer the following question using the provided context.\n\nContext:\n{retrieved_docs}\n\nQuestion: {query_text}\n\nAnswer:"
+
+    # Call OpenAI GPT API
+    response = openai.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "system", "content": "You are a helpful AI assistant."},
+              {"role": "user", "content": prompt}]
+)
+
+    return response.choices[0].message.content
+
+# Test the full pipeline
+test_query = "How does AI impact the world?"
+gpt_response = generate_gpt_response(test_query)
+print("\nGPT Response:\n", gpt_response)
